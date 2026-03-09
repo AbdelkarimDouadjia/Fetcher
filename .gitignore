@@ -8,3 +8,5 @@ dist/
 build/
 .federation_ids.json
 my_calendar.ics
+*.jpg
+*.png
