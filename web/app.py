@@ -14,8 +14,8 @@ from ics_generator import generate_ics
 
 app = Flask(__name__)
 
-DEFAULT_START = "2025-01-13"
-DEFAULT_END   = "2025-06-30"
+DEFAULT_START = "2026-01-19"
+DEFAULT_END   = "2026-08-31"
 
 
 def _encode_config(cfg: dict) -> str:

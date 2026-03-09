@@ -36,6 +36,11 @@ FETCH_END_DATE   = "2026-07-01"
 # TD / TP events will be filtered so that ONLY your group is kept.
 # ---------------------------------------------------------------------------
 MODULES = {
+    "MIN15221": {
+        "name": "TER",
+        "td_group": 1,
+        "td_group_label": "M1 Info gr. 1",
+    },
     "MIN17201": {
         "name": "Programmation, GL et Preuve",
         "td_group": 3,
