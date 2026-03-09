@@ -2,12 +2,12 @@
   "startDate": "2026-01-19",
   "endDate": "2026-08-31",
   "modules": [
-    { "code": "MIN15221", "tdGroup": 1 },
-    { "code": "MIN17201", "tdGroup": 3 },
-    { "code": "MSANGS2I", "tdGroup": 4 },
-    { "code": "MIN17211", "tdGroup": 1 },
-    { "code": "MIN17212", "tdGroup": 1 },
-    { "code": "MIN17214", "tdGroup": 2 },
-    { "code": "MIN17216", "tdGroup": 1 }
+    { "code": "MIN15221", "name": "TER", "tdGroup": 1 },
+    { "code": "MIN17201", "name": "Programmation, GL et Preuve", "tdGroup": 3 },
+    { "code": "MSANGS2I", "name": "Anglais", "tdGroup": 4 },
+    { "code": "MIN17211", "name": "Méthodes de Ranking", "tdGroup": 1 },
+    { "code": "MIN17212", "name": "Simulation", "tdGroup": 1 },
+    { "code": "MIN17214", "name": "Conception de BD", "tdGroup": 2 },
+    { "code": "MIN17216", "name": "Réseaux étendus", "tdGroup": 1 }
   ]
 }

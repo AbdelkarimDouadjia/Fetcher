@@ -148,7 +148,7 @@ def api_generate():
     fed_ids: list[str] = []
     for g in all_groups:
         t = g.get("text", "").lower()
-        if "m1 info]" in t and "gr." not in t:
+        if ("m1 info]" in t or "m1 info)" in t) and "gr." not in t:
             fed_ids.append(g["id"])
             continue
         for lbl in needed:
@@ -278,7 +278,7 @@ def api_update():
     fed_ids: list[str] = []
     for g in all_groups:
         t = g.get("text", "").lower()
-        if "m1 info]" in t and "gr." not in t:
+        if ("m1 info]" in t or "m1 info)" in t) and "gr." not in t:
             fed_ids.append(g["id"])
             continue
         for lbl in needed:
@@ -349,7 +349,7 @@ def cal_subscription(token: str):
     fed_ids: list[str] = []
     for g in all_groups:
         txt = g.get("text", "").lower()
-        if "m1 info]" in txt and "gr." not in txt:
+        if ("m1 info]" in txt or "m1 info)" in txt) and "gr." not in txt:
             fed_ids.append(g["id"])
             continue
         for lbl in needed:

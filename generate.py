@@ -35,7 +35,7 @@ def main():
         code = m["code"].upper()
         grp = int(m.get("tdGroup", 1))
         modules[code] = {
-            "name": code,
+            "name": m.get("name", code),
             "td_group": grp,
             "td_group_label": f"M1 Info gr. {grp}",
         }
@@ -54,7 +54,8 @@ def main():
     fed_ids = []
     for g in all_groups:
         txt = g.get("text", "").lower()
-        if "m1 info]" in txt and "gr." not in txt:
+        # CM group: contains "m1 info" without "gr."
+        if ("m1 info]" in txt or "m1 info)" in txt) and "gr." not in txt:
             fed_ids.append(g["id"])
             continue
         for lbl in needed:

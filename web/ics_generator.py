@@ -25,14 +25,7 @@ def _esc(text: str) -> str:
 
 
 def _esc_loc(text: str) -> str:
-    escaped = _esc(text)
-    result: list[str] = []
-    for ch in escaped:
-        if ord(ch) > 127:
-            result.append(f"&#{ord(ch)}\\;")
-        else:
-            result.append(ch)
-    return "".join(result)
+    return _esc(text)
 
 
 def _fold(line: str) -> str:

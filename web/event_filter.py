@@ -25,6 +25,17 @@ class CalendarEvent:
 _MODULE_CODE_RE = re.compile(r"(MIN\d{5}|MSANGS\w+)", re.IGNORECASE)
 _GROUP_RE       = re.compile(r"M1\s+Info\s+gr\.\s*(\d+)", re.IGNORECASE)
 
+# Regex to extract room/location from the description HTML.
+# Room lines look like: "AMPHI B - DESCARTES (160 / 85) [Amphithéâtre]"
+#                   or:  "G207 - GERMAIN (MASTER) [CARTABLE NUMERIQUE ]"
+#                   or:  "103 - BUFFON [CARTABLE NUMERIQUE ]"
+# They always contain a dash between room id and building name.
+# Module lines like "MIN17212-Simulation [MIN17212]" should NOT match.
+_ROOM_RE = re.compile(
+    r"<br\s*/?>[\s\r\n]*"
+    r"([A-Z0-9][A-Za-z0-9 ]*\s+-\s+[A-Z][A-Za-z0-9 /().,'\-\u2013&;#]+\[.+?\])",
+)
+
 # Keywords that indicate an exam / evaluation event (always included)
 _EXAM_KEYWORDS = [
     "examen", "partiel", "contrôle", "controle",
@@ -58,6 +69,18 @@ def _extract_module_codes(text: str) -> list[str]:
 
 def _extract_group_numbers(text: str) -> list[int]:
     return [int(n) for n in _GROUP_RE.findall(text)]
+
+def _extract_location(desc_raw: str) -> str:
+    """Extract the room / location line from CELCAT description HTML."""
+    m = _ROOM_RE.search(desc_raw)
+    if m:
+        loc = _clean_html(m.group(1))
+        # Skip if it's actually a module line (contains a module code)
+        if _MODULE_CODE_RE.search(loc):
+            return ""
+        return loc
+    return ""
+
 
 def _clean_html(raw: str) -> str:
     text = re.sub(r"<br\s*/?>", "\n", raw, flags=re.IGNORECASE)
@@ -143,8 +166,10 @@ def filter_events(
                     continue
 
         desc_clean     = _clean_html(desc_raw)
-        location_raw   = raw.get("location", "") or ""
-        location_clean = _clean_html(location_raw)
+        location_clean = _extract_location(desc_raw)
+        if not location_clean:
+            location_raw = raw.get("location", "") or ""
+            location_clean = _clean_html(location_raw)
 
         # Build summary
         if matching_codes:
