@@ -1,0 +1,12 @@
+{
+  "startDate": "2025-01-13",
+  "endDate": "2025-06-30",
+  "modules": [
+    { "code": "MIN17201", "tdGroup": 3 },
+    { "code": "MSANGS2I", "tdGroup": 4 },
+    { "code": "MIN17211", "tdGroup": 1 },
+    { "code": "MIN17212", "tdGroup": 1 },
+    { "code": "MIN17214", "tdGroup": 2 },
+    { "code": "MIN17216", "tdGroup": 1 }
+  ]
+}
