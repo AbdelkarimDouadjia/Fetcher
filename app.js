@@ -1,17 +1,26 @@
 /* =================================================================
-   UVSQ Calendar Fetcher – app.js (GitHub Pages version)
-   GSAP-powered animations · i18n · theme · CELCAT fetch · download
-   Identical to web/static/app.js but with:
-   - Relative API paths (works when Flask runs at same origin)
-   - GitHub Pages fallback when no Flask backend is available
-   - Documentation link instead of guide link
+   UVSQ Calendar Fetcher – app.js  (Client-side tool)
+   ================================================================
+   Hard-coded M1 Info S2 modules · Client-side .ics generation
+   No Flask / no server required. Reads pre-fetched celcat-data.json.
    ================================================================= */
 
 // -----------------------------------------------------------------
-// Detect if running on GitHub Pages (no Flask backend)
+// Hard-coded M1 Informatique S2 modules (2024-2025)
 // -----------------------------------------------------------------
-const IS_STATIC = window.location.hostname.includes("github.io")
-  || window.location.protocol === "file:";
+const M1_S2_MODULES = [
+  { code: "MIN17201", name: "Programmation, GL et Preuve" },
+  { code: "MIN17211", name: "Méthodes de Ranking" },
+  { code: "MIN17212", name: "Simulation" },
+  { code: "MIN17213", name: "Tuning de BD" },
+  { code: "MIN17214", name: "Conception de BD" },
+  { code: "MIN17215", name: "Protocoles IP" },
+  { code: "MIN17216", name: "Réseaux étendus" },
+  { code: "MIN17217", name: "Application Web et Sécurité" },
+  { code: "MIN17218", name: "Calcul Sécurisé" },
+  { code: "MSANGS2I", name: "Anglais S2 M1 Infos" },
+];
+const MAX_GROUPS = 4;
 
 // -----------------------------------------------------------------
 // i18n
@@ -21,12 +30,12 @@ const I18N = {
     heroBadge: "Outil Calendrier Universitaire",
     heroLine1: "Construis ton",
     heroLine2: "emploi du temps",
-    heroSub: "On détecte automatiquement tes modules depuis CELCAT. Choisis et télécharge.",
-    loadingGroups: "Connexion à CELCAT...",
-    loadingModules: "Chargement des modules...",
-    errorLoad: "Erreur de connexion.",
+    heroSub: "Sélectionne tes modules M1 Info S2, choisis ton groupe TD et télécharge ton calendrier .ics.",
+    loadingData: "Chargement des données...",
+    errorLoad: "Données indisponibles.",
+    errorNoData: "Les données CELCAT ne sont pas encore disponibles. Le fichier sera généré automatiquement par le workflow GitHub Actions.",
     retry: "Réessayer",
-    semester: "Semestre S2 — 2025/2026",
+    semester: "Semestre S2 — 2024/2025",
     dateFrom: "Du",
     dateTo: "Au",
     pickerTitle: "Sélectionne tes modules",
@@ -40,48 +49,38 @@ const I18N = {
     selectAtLeast: "Sélectionne au moins un module.",
     selectGroup: "Choisis un groupe TD pour : ",
     eventsFound: "événements trouvés",
-    guide: "Guide d'import",
     docs: "Documentation",
-    subscribe: "Obtenir un lien auto-actualisé",
-    subscribing: "Création du lien...",
-    subTitle: "Ton lien auto-actualisé",
-    subDesc: "Abonne-toi à ce lien dans ton appli calendrier. Il récupérera toujours le dernier emploi du temps depuis CELCAT.",
-    copy: "Copier",
-    copied: "Copié !",
-    subOneClick: "Ouvrir dans l'appli Calendrier",
-    subHowTo: "Comment s'abonner",
-    subSteps: [
-      "Google Calendar : Autres calendriers (+) → À partir de l'URL → colle le lien.",
-      "iPhone / iPad : Réglages → Calendrier → Comptes → Ajouter → Autre → S'abonner → colle le lien.",
-      "Outlook : Ajouter un calendrier → S'abonner sur le web → colle le lien.",
-      "Ton calendrier se mettra à jour automatiquement (toutes les 12 à 24h selon l'appli)."
+    configDownload: "Télécharger le config JSON",
+    configTitle: "Configuration pour auto-actualisation",
+    configDesc: "Télécharge ce fichier calendar-config.json et utilise-le avec GitHub Actions pour un calendrier auto-actualisé.",
+    configSteps: [
+      "Fork le dépôt GitHub du projet.",
+      "Remplace le fichier calendar-config.json par celui téléchargé.",
+      "Active GitHub Actions dans ton fork (onglet Actions).",
+      "Active GitHub Pages (Settings → Pages → Source: main).",
+      "Ton calendrier sera mis à jour automatiquement toutes les 6 heures.",
     ],
-    subHostNote: "Note : Le lien d'abonnement nécessite un serveur public. Tu peux aussi utiliser GitHub Actions + Pages pour une solution gratuite (voir le guide).",
+    configHowTo: "Comment mettre en place l'auto-actualisation",
     orUpdate: "ou mettre à jour un fichier existant",
     updateTitle: "Mettre à jour ton calendrier",
-    updateDesc: "Envoie un fichier .ics généré précédemment. On détectera tes modules et on téléchargera une version actualisée avec les derniers changements de CELCAT.",
+    updateDesc: "Envoie un fichier .ics généré précédemment. On détectera tes modules et téléchargera une version actualisée.",
     updateDropText: "Glisse ton fichier .ics ici ou clique pour parcourir",
     updateDropHint: "Uniquement les fichiers .ics générés par cet outil",
     updateUploading: "Analyse et mise à jour en cours...",
     updateSuccess: "Calendrier mis à jour ! Téléchargement lancé.",
     updateError: "Erreur lors de la mise à jour.",
-    // GitHub Pages fallback
-    staticTitle: "Serveur Flask requis",
-    staticMsg: "Cette appli web a besoin du serveur Flask local pour se connecter à CELCAT. Lance-le avec :",
-    staticCmd: "cd web && flask run",
-    staticAlt: "Tu peux aussi utiliser GitHub Actions + Pages pour un calendrier auto-actualisé sans serveur.",
-    staticDocs: "Voir le guide de configuration",
+    updateNoData: "Impossible : données CELCAT non chargées.",
   },
   en: {
     heroBadge: "University Calendar Tool",
     heroLine1: "Build your",
     heroLine2: "perfect schedule",
-    heroSub: "We auto-detect all your modules from CELCAT. Just pick and download.",
-    loadingGroups: "Connecting to CELCAT...",
-    loadingModules: "Loading modules...",
-    errorLoad: "Connection error.",
+    heroSub: "Select your M1 Info S2 modules, pick your TD group, and download your .ics calendar.",
+    loadingData: "Loading calendar data...",
+    errorLoad: "Data unavailable.",
+    errorNoData: "CELCAT data is not yet available. The file will be auto-generated by the GitHub Actions workflow.",
     retry: "Retry",
-    semester: "Semester S2 — 2025/2026",
+    semester: "Semester S2 — 2024/2025",
     dateFrom: "From",
     dateTo: "To",
     pickerTitle: "Select your modules",
@@ -95,37 +94,27 @@ const I18N = {
     selectAtLeast: "Select at least one module.",
     selectGroup: "Select a TD group for: ",
     eventsFound: "events detected",
-    guide: "Import guide",
     docs: "Documentation",
-    subscribe: "Get auto-update link",
-    subscribing: "Generating link...",
-    subTitle: "Your auto-update link",
-    subDesc: "Subscribe to this link in your calendar app. It will always fetch the latest schedule from CELCAT.",
-    copy: "Copy",
-    copied: "Copied!",
-    subOneClick: "Open in Calendar app",
-    subHowTo: "How to subscribe",
-    subSteps: [
-      "Google Calendar: Other calendars (+) → From URL → paste the link.",
-      "iPhone / iPad: Settings → Calendar → Accounts → Add → Other → Subscribed → paste the link.",
-      "Outlook: Add calendar → Subscribe from web → paste the link.",
-      "Your calendar will auto-refresh (every 12–24h depending on the app)."
+    configDownload: "Download config JSON",
+    configTitle: "Configuration for auto-updates",
+    configDesc: "Download this calendar-config.json and use it with GitHub Actions for an auto-updating calendar.",
+    configSteps: [
+      "Fork the project's GitHub repository.",
+      "Replace the calendar-config.json file with the one you downloaded.",
+      "Enable GitHub Actions in your fork (Actions tab).",
+      "Enable GitHub Pages (Settings → Pages → Source: main).",
+      "Your calendar will auto-update every 6 hours.",
     ],
-    subHostNote: "Note: The subscription link requires a public server. You can also use GitHub Actions + Pages for a free solution (see the guide).",
+    configHowTo: "How to set up auto-updates",
     orUpdate: "or update an existing file",
     updateTitle: "Update your calendar",
-    updateDesc: "Upload a previously generated .ics file. We'll detect your modules and download a refreshed version with the latest changes from CELCAT.",
+    updateDesc: "Upload a previously generated .ics file. We'll detect your modules and download a refreshed version.",
     updateDropText: "Drop your .ics file here or click to browse",
     updateDropHint: "Only .ics files generated by this tool",
     updateUploading: "Analyzing and updating...",
     updateSuccess: "Calendar updated! Download started.",
     updateError: "Error updating the file.",
-    // GitHub Pages fallback
-    staticTitle: "Flask server required",
-    staticMsg: "This web app needs the local Flask server to connect to CELCAT. Start it with:",
-    staticCmd: "cd web && flask run",
-    staticAlt: "You can also use GitHub Actions + Pages for a free auto-updating calendar without a server.",
-    staticDocs: "View setup guide",
+    updateNoData: "Cannot update: CELCAT data not loaded.",
   },
 };
 
@@ -133,8 +122,7 @@ const I18N = {
 // State
 // -----------------------------------------------------------------
 let lang = localStorage.getItem("lang") || (navigator.language.startsWith("fr") ? "fr" : "en");
-let allModules = [];
-let allGroups  = [];
+let celcatData = null;
 let totalEvents = 0;
 
 const $ = (s) => document.querySelector(s);
@@ -187,7 +175,7 @@ function renderUI() {
     const sp = btn.querySelector(".btn-generate-text");
     if (sp) sp.textContent = t("generate");
   }
-  if (allModules.length) renderModules();
+  renderModules();
 }
 
 // -----------------------------------------------------------------
@@ -257,123 +245,52 @@ function transitionToContent() {
 }
 
 // -----------------------------------------------------------------
-// GitHub Pages fallback: show friendly message instead of error
+// Load pre-fetched CELCAT data
 // -----------------------------------------------------------------
-function showStaticFallback() {
+async function loadData() {
   const status = $("#loadStatus");
-  const loader = $(".hero-loader");
-  const hero = $("#heroSection");
-
-  // Hide the pulse ring
-  const ring = $(".pulse-ring");
-  if (ring) ring.style.display = "none";
-
-  status.style.color = "var(--text-sec)";
-  status.textContent = "";
-
-  // Build fallback UI in the hero area
-  const fallback = document.createElement("div");
-  fallback.style.cssText = "text-align:center; margin-top:1.5rem; max-width:500px;";
-  fallback.innerHTML = `
-    <div style="padding:1.25rem 1.5rem; border-radius:16px; border:1px solid var(--border); background:var(--bg-glass); backdrop-filter:blur(12px); text-align:left;">
-      <h3 style="font-size:1rem; font-weight:700; margin-bottom:.5rem; color:var(--accent);">${t("staticTitle")}</h3>
-      <p style="font-size:.88rem; color:var(--text-sec); margin-bottom:.75rem; line-height:1.5;">${t("staticMsg")}</p>
-      <code style="display:block; padding:.5rem .75rem; border-radius:8px; background:var(--bg-solid); border:1px solid var(--border2); font-family:'JetBrains Mono',monospace; font-size:.82rem; color:var(--accent); margin-bottom:1rem;">${t("staticCmd")}</code>
-      <p style="font-size:.84rem; color:var(--text-dim); margin-bottom:.75rem; line-height:1.5;">${t("staticAlt")}</p>
-      <a href="docs.html" style="display:inline-flex; align-items:center; gap:.4rem; padding:.55rem 1.2rem; border-radius:10px; background:var(--accent-soft); color:var(--accent); font-size:.85rem; font-weight:600; text-decoration:none; transition:all .15s;">
-        ${t("staticDocs")}
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.5 1.5h7v7"/><path d="M10.5 1.5L1.5 10.5"/></svg>
-      </a>
-    </div>
-  `;
-
-  loader.after(fallback);
-  loader.style.display = "none";
-  $("#retryBtn").classList.add("hidden");
-}
-
-// -----------------------------------------------------------------
-// Fetch groups
-// -----------------------------------------------------------------
-async function fetchGroups() {
-  const status = $("#loadStatus");
-  status.textContent = t("loadingGroups");
+  status.textContent = t("loadingData");
   status.style.color = "";
   $("#retryBtn").classList.add("hidden");
 
-  // On GitHub Pages, skip the API call entirely
-  if (IS_STATIC) {
-    showStaticFallback();
-    return;
-  }
-
   try {
-    const res = await fetch("/api/groups");
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error);
-    allGroups = json.groups;
-    await fetchModules();
-  } catch (e) {
-    status.textContent = t("errorLoad") + " " + e.message;
-    status.style.color = "var(--error)";
-    $(".pulse-ring").style.background = "var(--error)";
-    $(".pulse-ring").style.setProperty("--accent", "var(--error)");
-    $("#retryBtn").classList.remove("hidden");
-  }
-}
-
-// -----------------------------------------------------------------
-// Fetch modules
-// -----------------------------------------------------------------
-async function fetchModules() {
-  const status = $("#loadStatus");
-  status.textContent = t("loadingModules");
-
-  const ids = allGroups.map((g) => g.id);
-  if (!ids.length) {
-    status.textContent = t("noModules");
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/modules", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ federationIds: ids }),
-    });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error);
-    allModules = json.modules;
-    totalEvents = json.eventCount || 0;
+    const resp = await fetch("celcat-data.json");
+    if (!resp.ok) throw new Error(t("errorNoData"));
+    celcatData = await resp.json();
+    totalEvents = celcatData.length;
     const ct = $("#eventCountText");
     if (ct) ct.textContent = `${totalEvents} ${t("eventsFound")}`;
-    renderModules();
-    transitionToContent();
-    setTimeout(() => {
-      const mc = document.getElementById("mainContent");
-      if (mc) { mc.style.opacity = "1"; mc.style.visibility = "visible"; }
-    }, 2200);
-  } catch (e) {
-    status.textContent = t("errorLoad") + " " + e.message;
-    status.style.color = "var(--error)";
-    $("#retryBtn").classList.remove("hidden");
+  } catch (_) {
+    // Data not available yet — modules still display (hard-coded)
   }
+
+  renderModules();
+  transitionToContent();
+  setTimeout(() => {
+    const mc = document.getElementById("mainContent");
+    if (mc) { mc.style.opacity = "1"; mc.style.visibility = "visible"; }
+  }, 2200);
 }
 
 // -----------------------------------------------------------------
-// Render module cards
+// Render module cards (hard-coded list)
 // -----------------------------------------------------------------
 function renderModules() {
   const grid = $("#moduleGrid");
-  grid.innerHTML = "";
+  if (!grid) return;
 
-  let maxGr = 4;
-  allGroups.forEach((g) => {
-    const m = g.text.match(/gr\.\s*(\d+)/i);
-    if (m) maxGr = Math.max(maxGr, parseInt(m[1]));
+  // Preserve current selections
+  const prev = {};
+  $$(".module-cb").forEach((cb) => {
+    if (cb.checked) {
+      const sel = $(`.grp-select[data-code="${cb.dataset.code}"]`);
+      prev[cb.dataset.code] = sel ? sel.value : "";
+    }
   });
 
-  allModules.forEach((mod) => {
+  grid.innerHTML = "";
+
+  M1_S2_MODULES.forEach((mod) => {
     const card = document.createElement("div");
     card.className = "module-card";
     card.dataset.code = mod.code;
@@ -401,7 +318,8 @@ function renderModules() {
     sel.dataset.code = mod.code;
     sel.disabled = true;
     sel.innerHTML = '<option value="">—</option>';
-    for (let i = 1; i <= maxGr; i++) sel.innerHTML += `<option value="${i}">${i}</option>`;
+    for (let i = 1; i <= MAX_GROUPS; i++)
+      sel.innerHTML += `<option value="${i}">${i}</option>`;
 
     card.addEventListener("click", (e) => {
       if (e.target === sel || e.target === cb) return;
@@ -420,6 +338,13 @@ function renderModules() {
     card.appendChild(info);
     card.appendChild(sel);
     grid.appendChild(card);
+
+    // Restore previous selection
+    if (prev[mod.code]) {
+      cb.checked = true;
+      cb.dispatchEvent(new Event("change"));
+      sel.value = prev[mod.code];
+    }
   });
 }
 
@@ -433,15 +358,236 @@ function toggleAll(state) {
   });
 }
 
+// =================================================================
+//  EVENT FILTERING  (ported from Python event_filter.py)
+// =================================================================
+const MODULE_CODE_RE = /(MIN\d{5}|MSANGS\w+)/gi;
+const GROUP_RE = /M1\s+Info\s+gr\.\s*(\d+)/gi;
+const ROOM_RE = /<br\s*\/?>\s*([A-Z0-9][A-Za-z0-9 ]*\s+-\s+[A-Z][A-Za-z0-9 /().,'\u2013&;#\-]+\[.+?\])/;
+const EXAM_KEYWORDS = [
+  "examen", "partiel", "contrôle", "controle",
+  "épreuve", "epreuve", "ct ", "ct\n",
+  "ds ", "ds\n", "soutenance", "rattrapage",
+  "exam", "evaluation", "évaluation",
+  "jury", "résultat", "resultat",
+];
+const COLORS = {
+  CM: "#27AE60", TD: "#E91E63", TP: "#2196F3",
+  EXAM: "#FF5722", DEFAULT: "#9E9E9E",
+};
+
+function cleanHtml(raw) {
+  let text = raw.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "");
+  const el = document.createElement("textarea");
+  el.innerHTML = text;
+  return el.value.trim();
+}
+
+function extractModuleCodes(text) {
+  const codes = new Set();
+  let m;
+  MODULE_CODE_RE.lastIndex = 0;
+  while ((m = MODULE_CODE_RE.exec(text)) !== null) codes.add(m[1].toUpperCase());
+  return [...codes];
+}
+
+function extractGroupNumbers(text) {
+  const nums = [];
+  let m;
+  GROUP_RE.lastIndex = 0;
+  while ((m = GROUP_RE.exec(text)) !== null) nums.push(parseInt(m[1]));
+  return nums;
+}
+
+function extractLocation(descRaw) {
+  const m = ROOM_RE.exec(descRaw);
+  if (m) {
+    const loc = cleanHtml(m[1]);
+    MODULE_CODE_RE.lastIndex = 0;
+    if (MODULE_CODE_RE.test(loc)) return "";
+    return loc;
+  }
+  return "";
+}
+
+function isExamEvent(raw) {
+  const text = ((raw.title || "") + " " + (raw.description || "") + " " + (raw.eventCategory || "")).toLowerCase();
+  return EXAM_KEYWORDS.some((kw) => text.includes(kw));
+}
+
+function eventCategory(raw) {
+  const cat = (raw.eventCategory || "").trim();
+  if (cat) return cat;
+  const desc = (raw.description || "") + " " + (raw.title || "");
+  for (const token of ["CM", "TD Cartable Numérique", "TD", "TP"]) {
+    if (desc.includes(token)) return token.split(" ")[0];
+  }
+  return "OTHER";
+}
+
+function buildUid(raw) {
+  if (raw.id) return raw.id + "@celcat.uvsq.fr";
+  const str = (raw.start || "") + (raw.description || "");
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return Math.abs(h).toString(16) + "@celcat.uvsq.fr";
+}
+
+/**
+ * Filter raw CELCAT events by selected modules.
+ * @param {Array} rawEvents - Raw event objects from celcat-data.json
+ * @param {Object} modules - { "MIN17201": { name, td_group }, ... }
+ */
+function filterEvents(rawEvents, modules, includeExams) {
+  if (includeExams === undefined) includeExams = true;
+  const enrolledCodes = new Set(Object.keys(modules).map((c) => c.toUpperCase()));
+  const kept = [];
+  const seen = new Set();
+
+  for (const raw of rawEvents) {
+    const descRaw = raw.description || "";
+    const titleRaw = raw.title || "";
+    const allText = titleRaw + " " + descRaw;
+
+    const isExam = includeExams && isExamEvent(raw);
+    const codes = extractModuleCodes(allText);
+    const matchingCodes = codes.filter((c) => enrolledCodes.has(c));
+
+    if (!matchingCodes.length && !isExam) continue;
+
+    const category = eventCategory(raw);
+
+    // Group filtering for TD/TP (exams always pass)
+    if (!isExam && (category.startsWith("TD") || category.startsWith("TP"))) {
+      const groupNums = extractGroupNumbers(allText);
+      if (groupNums.length) {
+        let match = false;
+        for (const code of matchingCodes) {
+          const expected = modules[code] && modules[code].td_group;
+          if (expected != null && groupNums.includes(expected)) { match = true; break; }
+        }
+        if (!match) continue;
+      }
+    }
+
+    const descClean = cleanHtml(descRaw);
+    let locationClean = extractLocation(descRaw);
+    if (!locationClean) locationClean = cleanHtml(raw.location || "");
+
+    let summary;
+    if (matchingCodes.length) {
+      const primaryCode = matchingCodes[0];
+      const modName = (modules[primaryCode] && modules[primaryCode].name) || primaryCode;
+      summary = `${category} - ${modName} - ${primaryCode}`;
+    } else if (isExam) {
+      summary = titleRaw ? cleanHtml(titleRaw) : `${category} - Exam`;
+    } else {
+      continue;
+    }
+
+    const color = raw.backgroundColor || (isExam ? COLORS.EXAM : (COLORS[category] || COLORS.DEFAULT));
+    const uid = buildUid(raw);
+
+    const descLines = [category];
+    if (locationClean) descLines.push(locationClean);
+    for (const code of (matchingCodes.length ? matchingCodes : codes)) {
+      const mname = (modules[code] && modules[code].name) || code;
+      descLines.push(`${code}-${mname} [${code}]`);
+    }
+
+    const dedup = `${raw.start || ""}|${raw.end || ""}|${summary}`;
+    if (seen.has(dedup)) continue;
+    seen.add(dedup);
+
+    kept.push({
+      uid, dtstart: raw.start || "", dtend: raw.end || "",
+      summary, description: descLines.join("\\n"),
+      location: locationClean, color, category,
+    });
+  }
+  return kept;
+}
+
+// =================================================================
+//  ICS GENERATION  (ported from Python ics_generator.py)
+// =================================================================
+function toIcsDt(iso) {
+  return iso.replace(/[-:]/g, "").replace(/[^0-9T]/g, "").slice(0, 15);
+}
+
+function esc(text) {
+  return text
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r\n/g, "\\n")
+    .replace(/\n/g, "\\n");
+}
+
+function foldLine(line) {
+  if (line.length <= 75) return line;
+  const parts = [];
+  let remaining = line;
+  let first = true;
+  while (remaining.length > (first ? 75 : 74)) {
+    const cut = first ? 75 : 74;
+    parts.push(remaining.slice(0, cut));
+    remaining = remaining.slice(cut);
+    first = false;
+  }
+  if (remaining) parts.push(remaining);
+  return parts.join("\r\n ");
+}
+
+function generateIcs(events, calName) {
+  if (!calName) calName = "CELCAT - UVSQ Calendar";
+  const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z/, "").slice(0, 15) + "Z";
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0",
+    "PRODID:-//CELCAT to ICS//UVSQ Calendar//EN",
+    "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "X-WR-CALNAME:" + calName,
+    "X-WR-TIMEZONE:Europe/Paris",
+    "X-WR-CALDESC:University calendar from CELCAT",
+  ];
+  for (const ev of events) {
+    const sEsc = esc(ev.summary);
+    const dEsc = esc(ev.description);
+    const lEsc = ev.location ? esc(ev.location) : "";
+    lines.push("BEGIN:VEVENT");
+    lines.push("UID:" + ev.uid);
+    lines.push("DTSTAMP:" + now);
+    lines.push("DTSTART:" + toIcsDt(ev.dtstart));
+    lines.push("DTEND:" + toIcsDt(ev.dtend));
+    lines.push(foldLine("SUMMARY:" + sEsc));
+    lines.push(foldLine("DESCRIPTION:" + dEsc));
+    if (lEsc) lines.push(foldLine("LOCATION:" + lEsc));
+    lines.push("COLOR:" + ev.color);
+    lines.push("CATEGORIES:" + ev.category);
+    lines.push("STATUS:CONFIRMED");
+    lines.push("BEGIN:VALARM");
+    lines.push("TRIGGER:-PT30M");
+    lines.push("ACTION:DISPLAY");
+    lines.push(foldLine("DESCRIPTION:Reminder: " + sEsc));
+    lines.push("END:VALARM");
+    lines.push("BEGIN:VALARM");
+    lines.push("TRIGGER:-P1D");
+    lines.push("ACTION:DISPLAY");
+    lines.push(foldLine("DESCRIPTION:Reminder: " + sEsc + " (Tomorrow)"));
+    lines.push("END:VALARM");
+    lines.push("END:VEVENT");
+  }
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n") + "\r\n";
+}
+
 // -----------------------------------------------------------------
-// Generate .ics
+// Collect selected modules from the picker
 // -----------------------------------------------------------------
-async function generate() {
-  const btn = $("#btnGenerate");
+function collectSelected() {
   const errEl = $("#formError");
   errEl.textContent = "";
-
-  const selected = [];
+  const selected = {};
   let hasError = false;
 
   $$(".module-cb:checked").forEach((cb) => {
@@ -449,43 +595,57 @@ async function generate() {
     const sel = $(`.grp-select[data-code="${code}"]`);
     const grp = sel ? sel.value : "";
     if (!grp) {
-      const mod = allModules.find((m) => m.code === code);
+      const mod = M1_S2_MODULES.find((m) => m.code === code);
       errEl.textContent = t("selectGroup") + (mod ? mod.name : code);
       hasError = true;
       return;
     }
-    const mod = allModules.find((m) => m.code === code);
-    selected.push({ code, name: mod ? mod.name : code, tdGroup: parseInt(grp) });
+    const mod = M1_S2_MODULES.find((m) => m.code === code);
+    selected[code] = {
+      name: mod ? mod.name : code,
+      td_group: parseInt(grp),
+      td_group_label: "M1 Info gr. " + grp,
+    };
   });
 
-  if (hasError) return;
-  if (!selected.length) { errEl.textContent = t("selectAtLeast"); return; }
+  if (hasError) return null;
+  if (!Object.keys(selected).length) {
+    errEl.textContent = t("selectAtLeast");
+    return null;
+  }
+  return selected;
+}
+
+// -----------------------------------------------------------------
+// Generate & download .ics
+// -----------------------------------------------------------------
+function generate() {
+  const btn = $("#btnGenerate");
+  const errEl = $("#formError");
+  errEl.textContent = "";
+
+  if (!celcatData) {
+    errEl.textContent = t("errorNoData");
+    return;
+  }
+
+  const modules = collectSelected();
+  if (!modules) return;
 
   btn.disabled = true;
   const sp = btn.querySelector(".btn-generate-text");
   if (sp) sp.textContent = t("generating");
 
   try {
-    const resp = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        startDate: $("#startDate").value,
-        endDate: $("#endDate").value,
-        modules: selected,
-      }),
-    });
-    if (!resp.ok) {
-      const j = await resp.json().catch(() => ({}));
-      throw new Error(j.error || `HTTP ${resp.status}`);
+    const filtered = filterEvents(celcatData, modules, true);
+    if (!filtered.length) {
+      errEl.textContent = lang === "fr"
+        ? "Aucun événement trouvé pour cette sélection."
+        : "No events found for this selection.";
+      return;
     }
-    const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "my_calendar.ics";
-    a.click();
-    URL.revokeObjectURL(url);
+    const ics = generateIcs(filtered);
+    downloadBlob(ics, "my_calendar.ics", "text/calendar;charset=utf-8");
   } catch (e) {
     errEl.textContent = e.message;
   } finally {
@@ -495,38 +655,135 @@ async function generate() {
 }
 
 // -----------------------------------------------------------------
-// Upload & Update existing .ics
+// Subscribe → Download config JSON + show fork instructions
 // -----------------------------------------------------------------
-async function uploadUpdate(file) {
+function subscribe() {
+  const errEl = $("#formError");
+  errEl.textContent = "";
+
+  const modules = collectSelected();
+  if (!modules) return;
+
+  const config = {
+    modules: modules,
+    start_date: $("#startDate").value,
+    end_date: $("#endDate").value,
+    include_exams: true,
+  };
+
+  downloadBlob(JSON.stringify(config, null, 2), "calendar-config.json", "application/json;charset=utf-8");
+
+  // Show fork instructions in the result card
+  const result = $("#subResult");
+  result.classList.remove("hidden");
+
+  const header = result.querySelector("h3");
+  if (header) header.textContent = t("configTitle");
+  const desc = result.querySelector(".sub-desc");
+  if (desc) desc.textContent = t("configDesc");
+
+  // Hide URL row + webcal (not applicable for client-side)
+  const urlRow = result.querySelector(".sub-url-row");
+  if (urlRow) urlRow.style.display = "none";
+  const webcal = result.querySelector(".btn-webcal");
+  if (webcal) webcal.style.display = "none";
+
+  const stepsEl = $("#subSteps");
+  stepsEl.innerHTML = "";
+  const steps = t("configSteps");
+  if (Array.isArray(steps)) {
+    steps.forEach((s) => {
+      const li = document.createElement("li");
+      li.textContent = s;
+      stepsEl.appendChild(li);
+    });
+  }
+  const howto = result.querySelector("summary");
+  if (howto) howto.textContent = t("configHowTo");
+
+  result.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// -----------------------------------------------------------------
+// Upload & Update existing .ics  (client-side)
+// -----------------------------------------------------------------
+function uploadUpdate(file) {
   const statusEl = $("#updateStatus");
   statusEl.classList.remove("hidden");
   statusEl.className = "update-status";
   statusEl.textContent = t("updateUploading");
 
-  const form = new FormData();
-  form.append("file", file);
-
-  try {
-    const resp = await fetch("/api/update", { method: "POST", body: form });
-    if (!resp.ok) {
-      const j = await resp.json().catch(() => ({}));
-      throw new Error(j.error || `HTTP ${resp.status}`);
-    }
-    const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "my_calendar_updated.ics";
-    a.click();
-    URL.revokeObjectURL(url);
-    statusEl.textContent = t("updateSuccess");
-    statusEl.classList.add("update-success");
-  } catch (e) {
-    statusEl.textContent = t("updateError") + " " + e.message;
+  if (!celcatData) {
+    statusEl.textContent = t("updateNoData");
     statusEl.classList.add("update-error");
+    return;
   }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const icsText = e.target.result;
+      const modules = parseIcsModules(icsText);
+      if (!Object.keys(modules).length) {
+        throw new Error(lang === "fr"
+          ? "Aucun module détecté dans le fichier."
+          : "No modules detected in the file.");
+      }
+      const filtered = filterEvents(celcatData, modules, true);
+      if (!filtered.length) {
+        throw new Error(lang === "fr" ? "Aucun événement trouvé." : "No events found.");
+      }
+      const ics = generateIcs(filtered);
+      downloadBlob(ics, "my_calendar_updated.ics", "text/calendar;charset=utf-8");
+      statusEl.textContent = t("updateSuccess");
+      statusEl.classList.add("update-success");
+    } catch (err) {
+      statusEl.textContent = t("updateError") + " " + err.message;
+      statusEl.classList.add("update-error");
+    }
+  };
+  reader.readAsText(file);
 }
 
+function parseIcsModules(icsText) {
+  const modules = {};
+  const lines = icsText.split(/\r?\n/);
+  let currentCodes = [];
+
+  for (const line of lines) {
+    MODULE_CODE_RE.lastIndex = 0;
+    let m;
+    while ((m = MODULE_CODE_RE.exec(line)) !== null) {
+      const code = m[1].toUpperCase();
+      if (!modules[code]) {
+        const mod = M1_S2_MODULES.find((x) => x.code === code);
+        modules[code] = { name: mod ? mod.name : code, td_group: 1, td_group_label: "M1 Info gr. 1" };
+      }
+      currentCodes.push(code);
+    }
+
+    GROUP_RE.lastIndex = 0;
+    const gm = GROUP_RE.exec(line);
+    if (gm) {
+      const grp = parseInt(gm[1]);
+      for (const code of currentCodes) {
+        if (modules[code]) {
+          modules[code].td_group = grp;
+          modules[code].td_group_label = "M1 Info gr. " + grp;
+        }
+      }
+    }
+
+    if (line.startsWith("END:VEVENT")) {
+      currentCodes = [];
+    }
+  }
+  return modules;
+}
+
+// -----------------------------------------------------------------
+// Drag & drop for update
+// -----------------------------------------------------------------
 function initUpdateDrop() {
   const drop = $("#updateDrop");
   const input = $("#updateFile");
@@ -545,87 +802,36 @@ function initUpdateDrop() {
     e.preventDefault();
     drop.classList.remove("dragover");
     const f = e.dataTransfer.files[0];
-    if (f && f.name.toLowerCase().endsWith(".ics")) {
-      uploadUpdate(f);
-    }
+    if (f && f.name.toLowerCase().endsWith(".ics")) uploadUpdate(f);
   });
 }
 
 // -----------------------------------------------------------------
-// Subscribe: get auto-update URL
+// Download helper
 // -----------------------------------------------------------------
-async function subscribe() {
-  const btn = $("#btnSubscribe");
-  const errEl = $("#formError");
-  errEl.textContent = "";
-
-  const selected = [];
-  let hasError = false;
-
-  $$("#moduleGrid .module-cb:checked").forEach((cb) => {
-    const code = cb.dataset.code;
-    const sel = $(`.grp-select[data-code="${code}"]`);
-    const grp = sel ? sel.value : "";
-    if (!grp) {
-      const mod = allModules.find((m) => m.code === code);
-      errEl.textContent = t("selectGroup") + (mod ? mod.name : code);
-      hasError = true;
-      return;
-    }
-    const mod = allModules.find((m) => m.code === code);
-    selected.push({ code, name: mod ? mod.name : code, tdGroup: parseInt(grp) });
-  });
-
-  if (hasError) return;
-  if (!selected.length) { errEl.textContent = t("selectAtLeast"); return; }
-
-  btn.disabled = true;
-  const sp = btn.querySelector(".btn-subscribe-text");
-  if (sp) sp.textContent = t("subscribing");
-
-  try {
-    const resp = await fetch("/api/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        startDate: $("#startDate").value,
-        endDate: $("#endDate").value,
-        modules: selected,
-      }),
-    });
-    const json = await resp.json();
-    if (!json.ok) throw new Error(json.error);
-
-    $("#subUrl").value = json.url;
-    $("#subWebcal").href = json.webcal;
-    const stepsEl = $("#subSteps");
-    stepsEl.innerHTML = "";
-    const steps = t("subSteps");
-    if (Array.isArray(steps)) {
-      steps.forEach((s) => {
-        const li = document.createElement("li");
-        li.textContent = s;
-        stepsEl.appendChild(li);
-      });
-    }
-    $("#subResult").classList.remove("hidden");
-    $("#subResult").scrollIntoView({ behavior: "smooth", block: "center" });
-  } catch (e) {
-    errEl.textContent = e.message;
-  } finally {
-    btn.disabled = false;
-    if (sp) sp.textContent = t("subscribe");
-  }
+function downloadBlob(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
+// -----------------------------------------------------------------
+// Copy helper
+// -----------------------------------------------------------------
 function copySubUrl() {
   const input = $("#subUrl");
+  if (!input || !input.value) return;
   navigator.clipboard.writeText(input.value).then(() => {
     const btn = $("#btnCopy");
-    const span = btn.querySelector("span");
+    const span = btn && btn.querySelector("span");
     if (span) {
-      span.textContent = t("copied");
-      setTimeout(() => { span.textContent = t("copy"); }, 2000);
+      const prev = span.textContent;
+      span.textContent = lang === "fr" ? "Copié !" : "Copied!";
+      setTimeout(() => { span.textContent = prev; }, 2000);
     }
   });
 }
@@ -638,6 +844,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   setLang(lang);
   playEntrance();
-  fetchGroups();
+  loadData();
   initUpdateDrop();
 });

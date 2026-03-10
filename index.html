@@ -59,12 +59,12 @@
       <span class="title-line" data-i18n="heroLine1">Build your</span>
       <span class="title-line title-accent" data-i18n="heroLine2">perfect schedule</span>
     </h1>
-    <p class="hero-sub" data-i18n="heroSub">We auto-detect all your modules from CELCAT. Just pick and download.</p>
+    <p class="hero-sub" data-i18n="heroSub">Select your M1 Info S2 modules, pick your TD group, and download your .ics calendar.</p>
     <div class="hero-loader" id="heroLoader">
       <div class="pulse-ring"></div>
-      <span id="loadStatus" class="load-label" data-i18n="loadingGroups">Connecting to CELCAT...</span>
+      <span id="loadStatus" class="load-label" data-i18n="loadingData">Loading calendar data...</span>
     </div>
-    <button id="retryBtn" class="btn-glass hidden" onclick="fetchGroups()" data-i18n="retry">Retry</button>
+    <button id="retryBtn" class="btn-glass hidden" onclick="loadData()" data-i18n="retry">Retry</button>
   </div>
   <div class="scroll-hint" id="scrollHint">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l5 5 5-5"/><path d="M7 6l5 5 5-5"/></svg>
@@ -126,12 +126,12 @@
 
     <!-- Subscribe -->
     <button id="btnSubscribe" class="btn-subscribe" onclick="subscribe()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
-      <span class="btn-subscribe-text" data-i18n="subscribe">Get auto-update link</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span class="btn-subscribe-text" data-i18n="configDownload">Download config JSON</span>
     </button>
 
     <!-- Subscribe hosting note -->
-    <p class="sub-hosting-note" data-i18n="subHostNote">Note: The subscription link only works if this app is hosted on a public server (not localhost).</p>
+    <p class="sub-hosting-note" data-i18n="configDesc">Download the config to set up your own auto-updating calendar with GitHub Actions.</p>
 
     <p id="formError" class="form-error"></p>
 
