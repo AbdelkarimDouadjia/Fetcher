@@ -80,7 +80,7 @@ Open `calendar-config.json` and replace with **your** modules from your *contrat
 | `startDate` | First day of your semester (format: `YYYY-MM-DD`) |
 | `endDate` | Last day you want covered (format: `YYYY-MM-DD`) |
 
-> **Tip:** Module codes follow the pattern `MINxxxxx` or `MSANGSxx`. You can find them on your contrat d'études at [e-campus UVSQ](https://e-campus2.uvsq.fr).
+> **Tip:** Module codes follow the pattern `MINxxxxx` or `MSANGSxx`. You can find them on your contrat d'études at [UVSQ Inscription](https://inscription.uvsq.fr/ipweb/jsp/contrat_peda_standalone.jsf).
 
 ### 3. Enable GitHub Pages
 
