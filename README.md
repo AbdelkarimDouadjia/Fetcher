@@ -167,7 +167,10 @@ Fetcher/
 ├── calendar.ics            ← Generated calendar (auto-updated)
 ├── generate.py             ← Standalone generator script
 ├── requirements.txt        ← Python dependencies
-├── index.html              ← Landing page (GitHub Pages)
+├── index.html              ← Main web app (GitHub Pages)
+├── app.js                  ← Web app logic (static)
+├── style.css               ← Web app styles (Awwwards design)
+├── docs.html               ← Setup & documentation guide
 ├── .github/
 │   └── workflows/
 │       └── update-calendar.yml  ← GitHub Actions cron workflow
