@@ -332,7 +332,6 @@ function toggleAll(state) {
 // =================================================================
 const MODULE_CODE_RE = /(MIN\d{5}|MYAMI\d+|MSANGS\w+)/gi;
 const GROUP_RE = /(?:M1\s+Info\s+gr\.|M2\s+AMIS\s+grp)\s*([A-Z0-9]+)/gi;
-const ROOM_RE = /<br\s*\/?>\s*([A-Z0-9][A-Za-z0-9 ]*\s+-\s+[A-Z][A-Za-z0-9 /().,'\u2013&;#\-]+\[.+?\])/;
 const EXAM_KEYWORDS = [
   "examen", "partiel", "contrôle", "controle",
   "épreuve", "epreuve", "ct ", "ct\n",
@@ -385,12 +384,12 @@ function extractGroupNumbers(text) {
 }
 
 function extractLocation(descRaw) {
-  const m = ROOM_RE.exec(descRaw);
-  if (m) {
-    const loc = cleanHtml(m[1]);
+  for (const rawLine of cleanHtml(descRaw).split(/\r?\n/)) {
+    const location = rawLine.trim();
     MODULE_CODE_RE.lastIndex = 0;
-    if (MODULE_CODE_RE.test(loc)) return "";
-    return loc;
+    if (/\S\s*[-\u2013]\s*\S/.test(location) && !MODULE_CODE_RE.test(location)) {
+      return location;
+    }
   }
   return "";
 }
