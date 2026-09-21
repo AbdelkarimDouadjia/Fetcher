@@ -22,8 +22,8 @@ class CalendarEvent:
     group_labels: list[str] = field(default_factory=list)
 
 
-_MODULE_CODE_RE = re.compile(r"(MIN\d{5}|MSANGS\w+)", re.IGNORECASE)
-_GROUP_RE       = re.compile(r"M1\s+Info\s+gr\.\s*(\d+)", re.IGNORECASE)
+_MODULE_CODE_RE = re.compile(r"(MIN\d{5}|MYAMI\d+|MSANGS\w+)", re.IGNORECASE)
+_GROUP_RE       = re.compile(r"(?:M1\s+Info\s+gr\.|M2\s+AMIS\s+grp)\s*([A-Z0-9]+)", re.IGNORECASE)
 
 # Regex to extract room/location from the description HTML.
 # Room lines look like: "AMPHI B - DESCARTES (160 / 85) [Amphithéâtre]"
@@ -67,8 +67,24 @@ def _is_exam_event(raw: dict) -> bool:
 def _extract_module_codes(text: str) -> list[str]:
     return list({m.upper() for m in _MODULE_CODE_RE.findall(text)})
 
-def _extract_group_numbers(text: str) -> list[int]:
-    return [int(n) for n in _GROUP_RE.findall(text)]
+def _extract_group_numbers(text: str) -> list[str]:
+    return [group.upper() for group in _GROUP_RE.findall(text)]
+
+
+def _extract_module_names(raw: dict, text: str) -> dict[str, str]:
+    """Return module codes and names, preferring CELCAT's structured field."""
+    module_names: dict[str, str] = {}
+    for label in raw.get("modules") or []:
+        clean = _clean_html(label)
+        match = _MODULE_CODE_RE.search(clean)
+        if not match:
+            continue
+        code = match.group(1).upper()
+        name = re.sub(rf"^{re.escape(code)}\s*[-–]\s*", "", clean, flags=re.IGNORECASE)
+        module_names[code] = name or code
+    for code in _extract_module_codes(text):
+        module_names.setdefault(code, code)
+    return module_names
 
 def _extract_location(desc_raw: str) -> str:
     """Extract the room / location line from CELCAT description HTML."""
@@ -109,14 +125,12 @@ def filter_events(
     raw_events: list[dict],
     modules: dict,
     include_exams: bool = True,
+    include_all: bool = False,
 ) -> list[CalendarEvent]:
     """
     Filter raw CELCAT events.
 
-    modules = {
-        "MIN17201": {"name": "...", "td_group": 3, "td_group_label": "M1 Info gr. 3"},
-        ...
-    }
+    ``modules`` may be empty when ``include_all`` is enabled.
 
     When *include_exams* is True, events that look like exams / evaluations
     are **always** included regardless of module selection.
@@ -132,11 +146,12 @@ def filter_events(
 
         is_exam = include_exams and _is_exam_event(raw)
 
-        codes = _extract_module_codes(all_text)
-        matching_codes = [c for c in codes if c in enrolled_codes]
+        module_names = _extract_module_names(raw, all_text)
+        codes = list(module_names)
+        matching_codes = codes if include_all else [c for c in codes if c in enrolled_codes]
 
         # Keep the event if it matches enrolled modules OR is an exam
-        if not matching_codes and not is_exam:
+        if not include_all and not matching_codes and not is_exam:
             continue
 
         category = _event_category(raw)
@@ -153,13 +168,13 @@ def filter_events(
                     break
 
         # Group filtering for TD / TP (but NOT for exams – exams always pass)
-        if not is_exam and (category.startswith("TD") or category.startswith("TP")):
+        if not include_all and not is_exam and (category.startswith("TD") or category.startswith("TP")):
             group_nums = _extract_group_numbers(all_text)
             if group_nums:
                 match = False
                 for code in matching_codes:
                     expected = modules.get(code, {}).get("td_group")
-                    if expected is not None and expected in group_nums:
+                    if expected is not None and str(expected).upper() in group_nums:
                         match = True
                         break
                 if not match:
@@ -174,11 +189,10 @@ def filter_events(
         # Build summary
         if matching_codes:
             primary_code = matching_codes[0]
-            mod_name = modules.get(primary_code, {}).get("name", primary_code)
+            mod_name = modules.get(primary_code, {}).get("name", module_names.get(primary_code, primary_code))
             summary  = f"{category} - {mod_name} - {primary_code}"
-        elif is_exam:
-            # Exam not tied to a specific enrolled module – use raw title
-            summary = _clean_html(title_raw) if title_raw else f"{category} - Exam"
+        elif include_all or is_exam:
+            summary = _clean_html(title_raw) if title_raw else category
         else:
             continue
 
@@ -196,7 +210,7 @@ def filter_events(
         if location_clean:
             desc_lines.append(location_clean)
         for code in (matching_codes or codes):
-            mname = modules.get(code, {}).get("name", code)
+            mname = modules.get(code, {}).get("name", module_names.get(code, code))
             desc_lines.append(f"{code}-{mname} [{code}]")
         groups_raw = raw.get("groups", [])
         if isinstance(groups_raw, list):
@@ -207,7 +221,7 @@ def filter_events(
             desc_lines.append(_clean_html(groups_raw))
         if len(desc_lines) <= 2 + max(len(matching_codes), 1):
             for line in desc_clean.split("\n"):
-                if "M1 " in line and "Info" in line:
+                if "M1 Info" in line or "M2 AMIS" in line:
                     desc_lines.append(line.strip())
                     break
 

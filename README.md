@@ -21,7 +21,7 @@
 
 ## What is this?
 
-**Fetcher** scrapes the [CELCAT UVSQ](https://edt.uvsq.fr) timetable, filters only **your** modules and TD groups, and generates a clean `.ics` calendar file that you can subscribe to from **Google Calendar, iPhone, Outlook, or any calendar app**.
+**Fetcher** downloads every event published for the [M2 AMIS CELCAT timetable](https://edt.uvsq.fr/cal?vt=agendaDay&dt=2026-09-21&et=group&fid0=M2%20AMIS) and generates a clean `.ics` calendar file that you can subscribe to from **Google Calendar, iPhone, Outlook, or any calendar app**.
 
 A GitHub Actions cron job **automatically refreshes** the calendar every 6 hours — so when a class is moved, a room changes, or a session is cancelled, your calendar updates by itself. No server, no hosting costs, **just GitHub**.
 
@@ -30,7 +30,7 @@ A GitHub Actions cron job **automatically refreshes** the calendar every 6 hours
 | Feature | Description |
 |---|---|
 | **Auto-update** | Calendar refreshes every 6 hours via GitHub Actions |
-| **Smart filtering** | Only your enrolled modules + your TD/TP group |
+| **Complete M2 calendar** | All M2 AMIS modules and non-module events |
 | **Exam detection** | Exams, midterms, and defenses always included |
 | **Room & location** | Full room info (e.g. `AMPHI B - DESCARTES`, `G207 - GERMAIN`) |
 | **Reminders** | Built-in 30 min + 1 day before alarms |
@@ -50,37 +50,31 @@ git clone https://github.com/AbdelkarimDouadjia/Fetcher.git
 cd Fetcher
 ```
 
-### 2. Edit your modules
+### 2. Check the M2 calendar configuration
 
-Open `calendar-config.json` and replace with **your** modules from your *contrat d'études*:
+The repository is already configured for the exact `M2 AMIS` calendar from **September 21, 2026 through October 31, 2027**:
 
 ```json
 {
-  "startDate": "2026-01-19",
-  "endDate": "2026-08-31",
-  "modules": [
-    { "code": "MIN15221", "name": "TER", "tdGroup": 1 },
-    { "code": "MIN17201", "name": "Programmation, GL et Preuve", "tdGroup": 3 },
-    { "code": "MSANGS2I", "name": "Anglais", "tdGroup": 4 },
-    { "code": "MIN17211", "name": "Méthodes de Ranking", "tdGroup": 1 },
-    { "code": "MIN17212", "name": "Simulation", "tdGroup": 1 },
-    { "code": "MIN17214", "name": "Conception de BD", "tdGroup": 2 },
-    { "code": "MIN17216", "name": "Réseaux étendus", "tdGroup": 1 }
-  ]
+  "programmeSearchTerm": "M2 AMIS",
+  "federationIds": ["M2 AMIS"],
+  "startDate": "2026-09-21",
+  "endDate": "2027-10-31",
+  "includeAllEvents": true,
+  "modules": []
 }
 ```
 
-**How to find your info:**
+You do **not** need to list modules. With `includeAllEvents` enabled, classes, exams, projects, rentrée events, and other M2 AMIS entries are all included.
+
+**What you may update later:**
 
 | Field | Where to find it |
 |---|---|
-| `code` | The module code from your contrat d'études (e.g. `MIN17212`) |
-| `name` | The module name (e.g. `Simulation`) |
-| `tdGroup` | Your TD group number — check your contrat or CELCAT (e.g. `TD01` → `1`) |
-| `startDate` | First day of your semester (format: `YYYY-MM-DD`) |
-| `endDate` | Last day you want covered (format: `YYYY-MM-DD`) |
-
-> **Tip:** Module codes follow the pattern `MINxxxxx` or `MSANGSxx`. You can find them on your contrat d'études at [UVSQ Inscription](https://inscription.uvsq.fr/ipweb/jsp/contrat_peda_standalone.jsf).
+| `startDate` | Change this when the calendar should begin (`YYYY-MM-DD`) |
+| `endDate` | Change this when you want to extend or shorten the calendar (`YYYY-MM-DD`) |
+| `federationIds` | Keep `M2 AMIS` unless UVSQ renames the CELCAT group |
+| `includeAllEvents` | Keep `true` to include every event and every module |
 
 ### 3. Enable GitHub Pages
 
@@ -132,8 +126,7 @@ https://<your-username>.github.io/Fetcher/calendar.ics
 │                  │   raw events      │               │
 └────────┬────────┘                   └───────────────┘
          │
-         │ filter by your modules
-         │ + TD groups + exams
+         │ keep all M2 AMIS events
          ▼
 ┌─────────────────┐     git push      ┌──────────────┐
 │  generate.py     │ ───────────────► │  GitHub Pages  │
@@ -152,7 +145,7 @@ https://<your-username>.github.io/Fetcher/calendar.ics
 
 1. **GitHub Actions** runs `generate.py` every 6 hours (or on manual trigger)
 2. `generate.py` reads your `calendar-config.json`, connects to CELCAT, fetches all events
-3. Events are filtered: only your modules, your TD group, plus all exams
+3. Every M2 AMIS event is kept, including entries without a module code
 4. A fresh `calendar.ics` is generated and committed back to the repo
 5. **GitHub Pages** serves it as a public URL
 6. Your calendar app fetches the URL periodically and stays up to date
@@ -163,7 +156,7 @@ https://<your-username>.github.io/Fetcher/calendar.ics
 
 ```
 Fetcher/
-├── calendar-config.json    ← YOUR config (modules, groups, dates)
+├── calendar-config.json    ← M2 group, date range, and all-events setting
 ├── calendar.ics            ← Generated calendar (auto-updated)
 ├── generate.py             ← Standalone generator script
 ├── requirements.txt        ← Python dependencies
@@ -199,22 +192,13 @@ Fetcher/
 When a new semester starts or your enrollment changes:
 
 1. Edit `calendar-config.json` (directly on GitHub: click the file → pencil icon ✏️ → edit → commit)
-2. Update `startDate`, `endDate`, and your `modules` list
+2. Update `startDate` and `endDate`; leave `includeAllEvents` as `true`
 3. The next workflow run (within 6 hours) will pick up your changes
 4. Or trigger it manually: **Actions** → **Update Calendar** → **Run workflow**
 
 ---
 
 ## Local Usage (Optional)
-
-### CLI tool
-
-```bash
-pip install requests beautifulsoup4
-python main.py
-```
-
-This reads `config.py` and generates `my_calendar.ics` locally.
 
 ### Flask web app
 
@@ -235,14 +219,16 @@ python generate.py
 
 Reads `calendar-config.json` and writes `calendar.ics`.
 
+> `generate.py` is the canonical M2 AMIS generator. The older `main.py` / `config.py` CLI is retained for legacy personalized M1 setups.
+
 ---
 
 ## FAQ
 
 <details>
-<summary><strong>Can I use this for a different programme (not M1 AMIS)?</strong></summary>
+<summary><strong>Can I use this for a different programme?</strong></summary>
 
-Currently the search term `"M1 AMIS"` is hardcoded. You'd need to edit `generate.py` and `web/app.py` to change the `search_groups()` call. PRs welcome!
+Yes. Change `programmeSearchTerm` and `federationIds` in `calendar-config.json`. Both workflows read that same configuration.
 </details>
 
 <details>
@@ -262,7 +248,7 @@ No. Each event has a stable UID based on the CELCAT event ID. When your calendar
 <details>
 <summary><strong>Can I share my calendar URL with classmates?</strong></summary>
 
-Yes, but only if they have the **exact same** modules and TD groups. Otherwise, they should fork the repo and set up their own config.
+Yes. This calendar contains all events for the common `M2 AMIS` CELCAT resource, so classmates using that same timetable can subscribe to the same URL.
 </details>
 
 <details>
@@ -297,6 +283,6 @@ MIT — free to use, modify, and distribute.
 ---
 
 <p align="center">
-  Made with ☕ for UVSQ M1 Info students<br/>
+  Made with ☕ for UVSQ M2 AMIS students<br/>
   <sub>Not affiliated with UVSQ or CELCAT.</sub>
 </p>

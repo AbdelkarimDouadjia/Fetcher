@@ -285,8 +285,8 @@
       </div>
       <div class="feature-card">
         <div class="feature-icon">🎯</div>
-        <h3>Smart filtering</h3>
-        <p>Only your enrolled modules and your TD/TP group. No noise from other groups.</p>
+        <h3>Complete M2 calendar</h3>
+        <p>All modules and all non-module events published for the M2 AMIS group.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📝</div>
@@ -330,15 +330,15 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-content">
-          <h3>Edit <code>calendar-config.json</code></h3>
-          <p>Replace the modules with yours from your <a href="https://inscription.uvsq.fr/ipweb/jsp/contrat_peda_standalone.jsf" style="color:var(--accent)" target="_blank">contrat d'études</a>. Set your TD group number for each module.</p>
+          <h3>Check <code>calendar-config.json</code></h3>
+          <p>The project is configured for every event in the exact <code>M2 AMIS</code> CELCAT group. No module list is required.</p>
           <div class="config-block"><pre>{
-  <span class="key">"startDate"</span>: <span class="str">"2026-01-19"</span>,
-  <span class="key">"endDate"</span>: <span class="str">"2026-08-31"</span>,
-  <span class="key">"modules"</span>: [
-    { <span class="key">"code"</span>: <span class="str">"MIN17212"</span>, <span class="key">"name"</span>: <span class="str">"Simulation"</span>, <span class="key">"tdGroup"</span>: <span class="num">1</span> },
-    { <span class="key">"code"</span>: <span class="str">"MSANGS2I"</span>, <span class="key">"name"</span>: <span class="str">"Anglais"</span>, <span class="key">"tdGroup"</span>: <span class="num">4</span> }
-  ]
+  <span class="key">"programmeSearchTerm"</span>: <span class="str">"M2 AMIS"</span>,
+  <span class="key">"federationIds"</span>: [<span class="str">"M2 AMIS"</span>],
+  <span class="key">"startDate"</span>: <span class="str">"2026-09-21"</span>,
+  <span class="key">"endDate"</span>: <span class="str">"2027-10-31"</span>,
+  <span class="key">"includeAllEvents"</span>: <span class="num">true</span>,
+  <span class="key">"modules"</span>: []
 }</pre></div>
         </div>
       </div>
@@ -411,7 +411,7 @@
 <footer class="footer">
   <div class="container">
     <p>
-      Made with ☕ for UVSQ M1 Info students &mdash;
+      Made with ☕ for UVSQ M2 AMIS students &mdash;
       <a href="https://github.com/AbdelkarimDouadjia/Fetcher">GitHub</a>
     </p>
     <p style="margin-top:6px">Not affiliated with UVSQ or CELCAT.</p>

@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
-      - name: Fetch all M1 Info S2 events
+      - name: Fetch all M2 AMIS events
         run: python fetch_all_events.py
 
       - name: Commit if changed

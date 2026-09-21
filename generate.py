@@ -21,11 +21,14 @@ def main():
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = json.load(f)
 
-    start_date = cfg.get("startDate", "2025-01-13")
-    end_date = cfg.get("endDate", "2025-06-30")
+    start_date = cfg.get("startDate", "2026-09-21")
+    end_date = cfg.get("endDate", "2027-10-31")
+    programme = cfg.get("programmeSearchTerm", "M2 AMIS")
+    fed_ids = cfg.get("federationIds", [])
+    include_all = cfg.get("includeAllEvents", False)
     mod_list = cfg.get("modules", [])
 
-    if not mod_list:
+    if not include_all and not mod_list:
         print("Error: No modules in calendar-config.json")
         sys.exit(1)
 
@@ -37,31 +40,18 @@ def main():
         modules[code] = {
             "name": m.get("name", code),
             "td_group": grp,
-            "td_group_label": f"M1 Info gr. {grp}",
+            "td_group_label": m.get("tdGroupLabel", f"{programme} grp {grp}"),
         }
 
-    print(f"Modules: {', '.join(modules.keys())}")
-    print(f"Date range: {start_date} → {end_date}")
+    print("Modules: all" if include_all else f"Modules: {', '.join(modules.keys())}")
+    print(f"Date range: {start_date} -> {end_date}")
 
     # Fetch groups from CELCAT
     client = CelcatClient()
     client.initialize()
-    all_groups = client.search_groups("M1 AMIS")
-    print(f"Found {len(all_groups)} CELCAT groups")
-
-    # Select relevant federation IDs
-    needed = {m["td_group_label"].lower() for m in modules.values()}
-    fed_ids = []
-    for g in all_groups:
-        txt = g.get("text", "").lower()
-        # CM group: contains "m1 info" without "gr."
-        if ("m1 info]" in txt or "m1 info)" in txt) and "gr." not in txt:
-            fed_ids.append(g["id"])
-            continue
-        for lbl in needed:
-            if lbl in txt:
-                fed_ids.append(g["id"])
-                break
+    if not fed_ids:
+        all_groups = client.search_groups(programme)
+        fed_ids = [g["id"] for g in all_groups if g.get("id") == programme]
 
     if not fed_ids:
         print("Error: No matching CELCAT groups found")
@@ -72,7 +62,12 @@ def main():
     print(f"Raw events: {len(raw_events)}")
 
     # Filter
-    filtered = filter_events(raw_events, modules, include_exams=True)
+    filtered = filter_events(
+        raw_events,
+        modules,
+        include_exams=True,
+        include_all=include_all,
+    )
     print(f"Filtered events: {len(filtered)}")
 
     if not filtered:

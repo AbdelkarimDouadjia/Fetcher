@@ -14,8 +14,9 @@ from ics_generator import generate_ics
 
 app = Flask(__name__)
 
-DEFAULT_START = "2026-01-19"
-DEFAULT_END   = "2026-08-31"
+PROGRAMME_ID = "M2 AMIS"
+DEFAULT_START = "2026-09-21"
+DEFAULT_END   = "2027-10-31"
 
 
 def _encode_config(cfg: dict) -> str:
@@ -53,13 +54,16 @@ def guide():
 
 @app.route("/api/groups", methods=["GET"])
 def api_groups():
-    """Fetch all M1 Info groups from CELCAT live."""
-    search = request.args.get("q", "M1 AMIS")
+    """Fetch the M2 AMIS group from CELCAT live."""
+    search = request.args.get("q", PROGRAMME_ID)
     try:
         client = CelcatClient()
         client.initialize()
         raw = client.search_groups(search, page_size=200)
-        groups = [{"id": g["id"], "text": html.unescape(g.get("text", ""))} for g in raw]
+        groups = [
+            {"id": g["id"], "text": html.unescape(g.get("text", ""))}
+            for g in raw if g.get("id") == PROGRAMME_ID
+        ]
         return jsonify({"ok": True, "groups": groups})
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
@@ -86,9 +90,9 @@ def api_modules():
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
-    code_re = re.compile(r"(MIN\d{5}|MSANGS\w+)", re.IGNORECASE)
+    code_re = re.compile(r"(MIN\d{5}|MYAMI\d+|MSANGS\w+)", re.IGNORECASE)
     name_re = re.compile(
-        r"((?:MIN\d{5}|MSANGS\w+))\s*[-–]\s*([^\[\]<>]+?)(?:\s*\[|$)",
+        r"((?:MIN\d{5}|MYAMI\d+|MSANGS\w+))\s*[-–]\s*([^\[\]<>]+?)(?:\s*\[|$)",
         re.IGNORECASE,
     )
 
@@ -134,13 +138,13 @@ def api_generate():
         modules[code] = {
             "name": m.get("name", code),
             "td_group": grp,
-            "td_group_label": f"M1 Info gr. {grp}",
+            "td_group_label": f"M2 AMIS grp {grp}",
         }
 
     try:
         client = CelcatClient()
         client.initialize()
-        all_groups = client.search_groups("M1 AMIS")
+        all_groups = client.search_groups(PROGRAMME_ID)
     except Exception as exc:
         return jsonify({"ok": False, "error": f"CELCAT error: {exc}"}), 500
 
@@ -148,7 +152,7 @@ def api_generate():
     fed_ids: list[str] = []
     for g in all_groups:
         t = g.get("text", "").lower()
-        if ("m1 info]" in t or "m1 info)" in t) and "gr." not in t:
+        if g.get("id") == PROGRAMME_ID:
             fed_ids.append(g["id"])
             continue
         for lbl in needed:
@@ -206,8 +210,8 @@ def api_subscribe():
 # Update: upload old .ics → get refreshed .ics
 # =====================================================================
 
-_ICS_CODE_RE = re.compile(r"(MIN\d{5}|MSANGS\w+)", re.IGNORECASE)
-_ICS_GROUP_RE = re.compile(r"M1\s*Info\s*gr\.\s*(\d+)", re.IGNORECASE)
+_ICS_CODE_RE = re.compile(r"(MIN\d{5}|MYAMI\d+|MSANGS\w+)", re.IGNORECASE)
+_ICS_GROUP_RE = re.compile(r"M2\s*AMIS\s*grp\s*(\d+)", re.IGNORECASE)
 
 
 @app.route("/api/update", methods=["POST"])
@@ -254,7 +258,7 @@ def api_update():
         modules[code] = {
             "name": code,
             "td_group": grp,
-            "td_group_label": f"M1 Info gr. {grp}",
+            "td_group_label": f"M2 AMIS grp {grp}",
         }
 
     # Extract date range from existing events
@@ -270,7 +274,7 @@ def api_update():
     try:
         client = CelcatClient()
         client.initialize()
-        all_groups = client.search_groups("M1 AMIS")
+        all_groups = client.search_groups(PROGRAMME_ID)
     except Exception as exc:
         return jsonify({"ok": False, "error": f"CELCAT error: {exc}"}), 500
 
@@ -278,7 +282,7 @@ def api_update():
     fed_ids: list[str] = []
     for g in all_groups:
         t = g.get("text", "").lower()
-        if ("m1 info]" in t or "m1 info)" in t) and "gr." not in t:
+        if g.get("id") == PROGRAMME_ID:
             fed_ids.append(g["id"])
             continue
         for lbl in needed:
@@ -335,13 +339,13 @@ def cal_subscription(token: str):
         modules[code] = {
             "name": code,
             "td_group": grp,
-            "td_group_label": f"M1 Info gr. {grp}",
+            "td_group_label": f"M2 AMIS grp {grp}",
         }
 
     try:
         client = CelcatClient()
         client.initialize()
-        all_groups = client.search_groups("M1 AMIS")
+        all_groups = client.search_groups(PROGRAMME_ID)
     except Exception as exc:
         return f"CELCAT error: {exc}", 502
 
@@ -349,7 +353,7 @@ def cal_subscription(token: str):
     fed_ids: list[str] = []
     for g in all_groups:
         txt = g.get("text", "").lower()
-        if ("m1 info]" in txt or "m1 info)" in txt) and "gr." not in txt:
+        if g.get("id") == PROGRAMME_ID:
             fed_ids.append(g["id"])
             continue
         for lbl in needed:
